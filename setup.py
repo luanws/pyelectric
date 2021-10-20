@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyeletric",
-    version="1.0.0",
+    version="1.0.1",
     author="luanws",
     author_email="luan.w.silveira@gmail.com",
     description="Python package for electric circuits",
