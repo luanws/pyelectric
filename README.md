@@ -1,5 +1,5 @@
 # pyeletric
 
 ```
-pip install pyeletric
+pip install pyelectric
 ```
