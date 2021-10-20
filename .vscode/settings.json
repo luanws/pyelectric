@@ -9,7 +9,13 @@
     },
     "cSpell.words": [
         "cmath",
+        "imag",
         "phasor",
-        "pyelectric"
+        "pyelectric",
+        "pyplot",
+        "xlabel",
+        "xlim",
+        "ylabel",
+        "ylim"
     ],
 }

@@ -4,7 +4,7 @@ import cmath
 import math
 from typing import Union
 
-from pyelectric.phasor import Phasor
+from pyelectric.ac.phasor import Phasor
 
 
 class Power:

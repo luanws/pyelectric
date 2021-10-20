@@ -1,15 +1,9 @@
-from typing import Iterable, List, Union
+from typing import List, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from . import Phasor
-
-
-def plot_phasor(*phasor_list: Iterable[Phasor], color: str = None, unitary: bool = False, **kwargs):
-    if unitary:
-        phasor_list = [p/p.abs for p in phasor_list]
-    plot_complex([p.value for p in phasor_list], color=color, **kwargs)
 
 
 def plot_complex(zs: Union[complex, List[complex]], color: str = None):
@@ -26,3 +20,9 @@ def plot_complex(zs: Union[complex, List[complex]], color: str = None):
     plt.grid(True, which='both')
     plt.ylabel('Im')
     plt.xlabel('Re')
+
+
+def plot_phasor(*phasor_list: Phasor, color: str = None, unitary: bool = False, **kwargs):
+    if unitary:
+        phasor_list = [p/p.abs for p in phasor_list]
+    plot_complex([p.value for p in phasor_list], color=color, **kwargs)

@@ -1,6 +1,6 @@
 import math
 
-from pyelectric.power import Power
+from pyelectric.ac.power import Power
 
 
 def reactance(voltage: float, power: Power, new_factor: float) -> float:

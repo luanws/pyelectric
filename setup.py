@@ -20,6 +20,7 @@ setuptools.setup(
     ],
     install_requires=[
         'numpy',
+        'matplotlib',
     ],
     python_requires='>=3.7',
 )

@@ -10,7 +10,7 @@ class Phasor:
     decimal_places: int = 2
     angle_in_degree: bool = True
 
-    def __init__(self, r: float, theta: float = None) -> None:
+    def __init__(self, r: Union[float, complex], theta: float = None) -> None:
         if theta is None:
             r, theta = cmath.polar(r)
         self.value = cmath.rect(r, theta)
@@ -63,7 +63,7 @@ class Phasor:
         return Phasor(self.value ** (other.value if isinstance(other, Phasor) else other))
 
     def __floordiv__(self, other: Union[Phasor, complex]) -> Phasor:
-        return Phasor(1 / ((1 / self.value) + (1 / other.value)))
+        return Phasor(1 / ((1 / self.value) + (1 / other.value if isinstance(other, Phasor) else other)))
 
     def __eq__(self, other: Union[Phasor, complex]) -> bool:
         return self.value == (other.value if isinstance(other, Phasor) else other)
