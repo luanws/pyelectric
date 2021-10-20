@@ -8,7 +8,7 @@ from pymenu import Menu
 
 
 def clear_build():
-    folders = ['build', 'dist', 'pyeletric.egg-info']
+    folders = ['build', 'dist', 'pyelectric.egg-info']
     for folder in folders:
         with suppress(FileNotFoundError):
             shutil.rmtree(folder)
