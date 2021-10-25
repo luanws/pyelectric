@@ -11,6 +11,7 @@
         "cmath",
         "imag",
         "luanws",
+        "ndarray",
         "phasor",
         "pyelectric",
         "pymenu",
