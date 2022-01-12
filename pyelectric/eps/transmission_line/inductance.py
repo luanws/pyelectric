@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 
 class Cable:
@@ -28,7 +28,22 @@ def geometric_mean_of_cable_distances(cables_phase_x: List[Cable], cables_phase_
     return distance
 
 
-def calc_inductance(cables_phase_x: List[Cable], cables_phase_y: List[Cable]) -> float:
+CablesType = List[Union[Cable, Dict[str, Any]]]
+
+
+def to_cables(cables: CablesType) -> List[Cable]:
+    cables_list: List[Cable] = []
+    for cable in cables:
+        if isinstance(cable, Cable):
+            cables_list.append(cable)
+        else:
+            cables_list.append(Cable(**cable))
+    return cables_list
+
+
+def calc_inductance(conductor_x: CablesType, conductor_y: CablesType) -> float:
+    cables_phase_x: List[Cable] = to_cables(conductor_x)
+    cables_phase_y: List[Cable] = to_cables(conductor_y)
     Dm = geometric_mean_of_cable_distances(cables_phase_x, cables_phase_y)
     Dsx = geometric_mean_of_cable_distances(cables_phase_x, cables_phase_x)
     Dsy = geometric_mean_of_cable_distances(cables_phase_y, cables_phase_y)
