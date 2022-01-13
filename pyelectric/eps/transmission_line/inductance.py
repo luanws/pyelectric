@@ -27,15 +27,15 @@ def list_of_lists_to_list(list_of_list: List[List[Any]]) -> List[Any]:
     return [item for sublist in list_of_list for item in sublist]
 
 
-def geometric_mean_of_cable_distances(*conductors: List[Cable]) -> float:
+def geometric_mean_of_cable_distances(cables_bundles: List[List[Cable]]) -> float:
     distance: float = 1
-    for i, conductor in enumerate(conductors):
-        compare_conductors = conductors[i+1:]
-        compare_cables = list_of_lists_to_list(compare_conductors)
-        for cable1 in conductor:
+    for i, cables_bundle in enumerate(cables_bundles):
+        compare_cables_bundles = cables_bundles[i+1:]
+        compare_cables = list_of_lists_to_list(compare_cables_bundles)
+        for cable1 in cables_bundle:
             for cable2 in compare_cables:
                 distance *= distance_between_cables(cable1, cable2)
-    n = reduce(lambda x, y: x*y, [len(c) for c in conductors])
+    n = reduce(lambda x, y: x*y, [len(c) for c in cables_bundles])
     distance = distance**(1/n)
     return distance
 
@@ -50,10 +50,12 @@ def to_cables(cables: List[Union[Cable, Dict[str, Any]]]) -> List[Cable]:
     return cables_list
 
 
-def calc_inductance(*conductors: List[Union[Cable, Dict[str, Any]]]) -> float:
-    conductors: List[Cable] = [to_cables(c) for c in conductors]
-    Dm = geometric_mean_of_cable_distances(*conductors)
-    Ds_list = [geometric_mean_of_cable_distances(c, c) for c in conductors]
+def calc_inductance(*conductors_bundle: List[Union[Cable, Dict[str, Any]]]) -> float:
+    cables_bundles: List[List[Cable]] = [
+        to_cables(c) for c in conductors_bundle]
+    Dm = geometric_mean_of_cable_distances(cables_bundles)
+    Ds_list = [geometric_mean_of_cable_distances(
+        [c, c]) for c in cables_bundles]
 
     L_list = [2e-7*math.log(Dm/Ds) for Ds in Ds_list]
     L = sum(L_list)
