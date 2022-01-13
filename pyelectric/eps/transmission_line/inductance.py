@@ -1,4 +1,5 @@
 import math
+from functools import reduce
 from typing import Any, Dict, List, Tuple, Union
 
 
@@ -14,24 +15,32 @@ class Cable:
 def distance_between_cables(cable1: Cable, cable2: Cable) -> float:
     x1, y1 = cable1.position
     x2, y2 = cable2.position
-    return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    d = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+    return d if d > 0 else cable1.radius*math.exp(-1/4)
 
 
-def geometric_mean_of_cable_distances(cables_phase_x: List[Cable], cables_phase_y: List[Cable]) -> float:
+def multiply_all_elements_from_list(list: List[float]) -> float:
+    return reduce(lambda x, y: x*y, list)
+
+
+def list_of_lists_to_list(list_of_list: List[List[Any]]) -> List[Any]:
+    return [item for sublist in list_of_list for item in sublist]
+
+
+def geometric_mean_of_cable_distances(*conductors: List[Cable]) -> float:
     distance: float = 1
-    for cable_x in cables_phase_x:
-        for cable_y in cables_phase_y:
-            d = distance_between_cables(cable_x, cable_y)
-            distance *= d if d > 0 else cable_x.radius*math.exp(-1/4)
-    n = len(cables_phase_x) * len(cables_phase_y)
+    for i, conductor in enumerate(conductors):
+        compare_conductors = conductors[i+1:]
+        compare_cables = list_of_lists_to_list(compare_conductors)
+        for cable1 in conductor:
+            for cable2 in compare_cables:
+                distance *= distance_between_cables(cable1, cable2)
+    n = reduce(lambda x, y: x*y, [len(c) for c in conductors])
     distance = distance**(1/n)
     return distance
 
 
-CablesType = List[Union[Cable, Dict[str, Any]]]
-
-
-def to_cables(cables: CablesType) -> List[Cable]:
+def to_cables(cables: List[Union[Cable, Dict[str, Any]]]) -> List[Cable]:
     cables_list: List[Cable] = []
     for cable in cables:
         if isinstance(cable, Cable):
@@ -41,14 +50,11 @@ def to_cables(cables: CablesType) -> List[Cable]:
     return cables_list
 
 
-def calc_inductance(conductor_x: CablesType, conductor_y: CablesType) -> float:
-    cables_phase_x: List[Cable] = to_cables(conductor_x)
-    cables_phase_y: List[Cable] = to_cables(conductor_y)
-    Dm = geometric_mean_of_cable_distances(cables_phase_x, cables_phase_y)
-    Dsx = geometric_mean_of_cable_distances(cables_phase_x, cables_phase_x)
-    Dsy = geometric_mean_of_cable_distances(cables_phase_y, cables_phase_y)
+def calc_inductance(*conductors: List[Union[Cable, Dict[str, Any]]]) -> float:
+    conductors: List[Cable] = [to_cables(c) for c in conductors]
+    Dm = geometric_mean_of_cable_distances(*conductors)
+    Ds_list = [geometric_mean_of_cable_distances(c, c) for c in conductors]
 
-    Lx = 2e-7*math.log(Dm/Dsx)
-    Ly = 2e-7*math.log(Dm/Dsy)
-    L = Lx + Ly
+    L_list = [2e-7*math.log(Dm/Ds) for Ds in Ds_list]
+    L = sum(L_list)
     return L
