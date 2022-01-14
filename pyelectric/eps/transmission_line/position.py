@@ -7,8 +7,8 @@ class Position:
 
     def __init__(self, x: float, y: float, polar: bool = False):
         if polar:
-            self.x = x * math.cos(self.y)
-            self.y = x * math.sin(self.y)
+            self.x = x * math.cos(y)
+            self.y = x * math.sin(y)
         else:
             self.x = x
             self.y = y
