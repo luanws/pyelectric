@@ -13,6 +13,9 @@ class Position:
             self.x = x
             self.y = y
 
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y})"
+
     def __getitem__(self, item: int) -> float:
         if item == 0:
             return self.x
