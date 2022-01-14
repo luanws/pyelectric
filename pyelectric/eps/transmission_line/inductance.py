@@ -21,7 +21,8 @@ def geometric_mean_of_conductor_distances(*conductors_bundles: List[Conductor]) 
         compare_conductors = list_of_lists_to_list(compare_conductors_bundles)
         for conductor1 in conductors_bundle:
             for conductor2 in compare_conductors:
-                distance *= conductor1.distance(conductor2.position)
+                d = conductor1.distance(conductor2.position)
+                distance *= d if d > 0 else conductor1.gmr
                 n += 1
     distance = distance**(1/n)
     return distance

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import math
-from ctypes import Union
-from typing import Any, Dict, List
+from typing import List
 
 from .position import Position
 
@@ -22,8 +21,7 @@ class Conductor:
     def distance(self, position: Position) -> float:
         x1, y1 = self.position.x, self.position.y
         x2, y2 = position.x, position.y
-        distance = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-        return distance if distance > 0 else self.gmr
+        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
 def parse_conductors(conductors) -> List[Conductor]:
