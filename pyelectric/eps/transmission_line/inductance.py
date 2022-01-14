@@ -8,7 +8,7 @@ def list_of_lists_to_list(list_of_list: Iterable[List[Any]]) -> List[Any]:
     return [item for sublist in list_of_list for item in sublist]
 
 
-def geometric_mean_of_conductor_distances(*conductors_bundles: List[Conductor]) -> float:
+def geometric_mean_distance(*conductors_bundles: List[Conductor]) -> float:
     distance: float = 1
     n: int = 0
     for i, conductors_bundle in enumerate(conductors_bundles):
@@ -24,8 +24,8 @@ def geometric_mean_of_conductor_distances(*conductors_bundles: List[Conductor]) 
 
 
 def calc_inductance(*conductors_bundles: List[Conductor]) -> float:
-    Dm = geometric_mean_of_conductor_distances(*conductors_bundles)
-    Ds_list = [geometric_mean_of_conductor_distances(
+    Dm = geometric_mean_distance(*conductors_bundles)
+    Ds_list = [geometric_mean_distance(
         c, c) for c in conductors_bundles]
 
     L_list = [2e-7*math.log(Dm/Ds) for Ds in Ds_list]
