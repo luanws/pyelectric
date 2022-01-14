@@ -1,12 +1,7 @@
 import math
-from functools import reduce
 from typing import Any, Iterable, List
 
 from .conductor import Conductor
-
-
-def multiply_all_elements_from_list(list: List[float]) -> float:
-    return reduce(lambda x, y: x*y, list)
 
 
 def list_of_lists_to_list(list_of_list: Iterable[List[Any]]) -> List[Any]:
