@@ -3,7 +3,9 @@ import os
 from typing import Any, Dict, Optional
 
 conductors_dict: Optional[Dict[str, Any]] = None
-conductors_json_path = os.path.join('pyelectric', 'eps', 'transmission_line', 'conductors', 'conductors.json')
+current_file_path = os.path.abspath(__file__)
+conductors_json_path = os.path.join(current_file_path, '..', 'conductors.json')
+conductors_json_path = os.path.abspath(conductors_json_path)
 
 
 def get_by_name(conductor_name: str) -> Dict[str, Any]:
@@ -11,7 +13,6 @@ def get_by_name(conductor_name: str) -> Dict[str, Any]:
     if conductors_dict is None:
         with open(conductors_json_path) as f:
             conductors_dict = json.load(f)
-    print(conductors_dict)
     return conductors_dict[conductor_name]
 
 
