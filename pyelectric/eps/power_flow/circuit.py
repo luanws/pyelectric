@@ -66,19 +66,20 @@ class Circuit:
                 voltages[i] = self.bars[i].voltage
         return voltages
 
-    def update_voltages(self):
-        y_bus = self.__y_bus_array
-        power_esp = self.__power_esp_array
-        voltages = self.__voltage_array
+    def update_voltages(self, repeat: int = 1):
+        for _ in range(repeat):
+            y_bus = self.__y_bus_array
+            power_esp = self.__power_esp_array
+            voltages = self.__voltage_array
 
-        for i, bar in enumerate(self.bars):
-            if isinstance(bar, SlackBar):
-                continue
-            I = power_esp[i].conjugate()/voltages[i].conjugate()
-            summation = sum([y_bus[i, j]*voltages[j]
-                             for j in range(len(voltages)) if i != j])
-            voltages[i] = (I - summation)/y_bus[i, i]
+            for i, bar in enumerate(self.bars):
+                if isinstance(bar, SlackBar):
+                    continue
+                I = power_esp[i].conjugate()/voltages[i].conjugate()
+                summation = sum([y_bus[i, j]*voltages[j]
+                                for j in range(len(voltages)) if i != j])
+                voltages[i] = (I - summation)/y_bus[i, i]
 
-        self.__voltage_array = voltages
-        for i, bar in enumerate(self.bars):
-            bar.voltage = voltages[i]
+            self.__voltage_array = voltages
+            for i, bar in enumerate(self.bars):
+                bar.voltage = voltages[i]
