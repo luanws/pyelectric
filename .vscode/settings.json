@@ -17,6 +17,8 @@
         "pyelectric",
         "pymenu",
         "pyplot",
+        "schemdraw",
+        "sympy",
         "xlabel",
         "xlim",
         "ylabel",
