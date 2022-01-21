@@ -4,7 +4,8 @@ from scripts import Script
 
 
 def show_packages():
-    print('\n'.join(setuptools.find_packages()))
+    packages = setuptools.find_packages(include=['pyelectric', 'pyelectric.*'])
+    print('\n'.join(packages))
 
 
 class ShowPackages(Script):
