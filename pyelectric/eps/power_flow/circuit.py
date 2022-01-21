@@ -69,11 +69,12 @@ class Circuit:
         return voltages
 
     def solve(self, repeat: int = 1):
-        self.update_voltages(repeat)
-        self.update_powers()
-        self.update_amperages()
+        self.update_bar_voltages(repeat)
+        self.update_bar_powers()
+        self.update_line_amperages()
+        self.update_line_powers()
 
-    def update_voltages(self, repeat: int = 1):
+    def update_bar_voltages(self, repeat: int = 1):
         for _ in range(repeat):
             y_bus = self.__y_bus_array
             power_esp = self.__power_esp_array
@@ -91,7 +92,7 @@ class Circuit:
             for i, bar in enumerate(self.bars):
                 bar.voltage = voltages[i]
 
-    def update_powers(self):
+    def update_bar_powers(self):
         voltages = self.__voltage_array
         y_bus = self.__y_bus_array
         for i in range(len(voltages)):
@@ -102,14 +103,25 @@ class Circuit:
                      * voltages[i] + summation)).conjugate()
                 self.bars[i].power = S
 
-    def update_amperages(self):
+    def update_line_amperages(self):
         y_bus = self.__y_bus_array
         y = y_bus*(np.identity(len(y_bus))*2 - 1)
-        for i in range(len(self.lines)):
-            line = self.lines[i]
+        for line in self.lines:
             bar1 = line.bar1
             bar2 = line.bar2
             bar1_index = self.get_bar_index(bar1)
             bar2_index = self.get_bar_index(bar2)
             I = (bar1.voltage - bar2.voltage)*y[bar1_index, bar2_index]
             line.amperage = I
+
+    def update_line_powers(self):
+        for line in self.lines:
+            I = line.amperage
+
+            V1 = line.bar1.voltage
+            S12 = V1*I.conjugate()
+            line.power = S12
+
+            V2 = line.bar2.voltage
+            S21 = V2*(-I).conjugate()
+            line.power_reverse = S21
