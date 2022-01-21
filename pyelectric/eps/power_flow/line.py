@@ -27,6 +27,7 @@ class Line:
     def __str__(self) -> str:
         S12 = colored(complex_to_str(self.power), 'green')
         S21 = colored(complex_to_str(self.power_reverse), 'green')
+        S = colored(complex_to_str(self.power + self.power_reverse), 'green')
         bar1 = colored(self.bar1.name, 'blue')
         bar2 = colored(self.bar2.name, 'blue')
-        return f'{bar1} ━━ {bar2}: S{bar1}{bar2} = ({S12}), S{bar2}{bar1} = ({S21})'
+        return f'{bar1} ━━ {bar2}: S = ({S}), S{bar1}{bar2} = ({S12}), S{bar2}{bar1} = ({S21})'
