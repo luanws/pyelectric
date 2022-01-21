@@ -1,3 +1,4 @@
+import math
 from typing import List
 
 import numpy as np
@@ -21,6 +22,7 @@ class Circuit:
         self.bars = bars
         self.lines = lines
         self.power_base = power_base
+        self.bar_powers_to_pu()
         self.__y_bus_array = self.get_y_bus_array()
         self.__voltage_array = self.get_voltage_array()
         self.__power_esp_array = self.get_power_esp_array()
@@ -29,6 +31,15 @@ class Circuit:
         bars = '\n'.join([str(bar) for bar in self.bars])
         lines = '\n'.join([str(line) for line in self.lines])
         return f'{bars}\n{lines}'
+
+    def bar_powers_to_pu(self):
+        for bar in self.bars:
+            bar.power /= self.power_base
+            if isinstance(bar, RegulatorBar):
+                bar.active_power /= self.power_base
+            elif isinstance(bar, LoadBar):
+                bar.active_power /= self.power_base
+                bar.reactive_power /= self.power_base
 
     def get_bar_index(self, bar: Bar) -> int:
         for i, b in enumerate(self.bars):
@@ -58,50 +69,73 @@ class Circuit:
         for i, bar in enumerate(self.bars):
             if isinstance(bar, LoadBar):
                 power_d[i] = bar.power
+            elif isinstance(bar, RegulatorBar):
+                power_g[i] = bar.active_power
         power_esp = power_g - power_d
-        return power_esp/self.power_base
+        return power_esp
 
     def get_voltage_array(self) -> np.ndarray:
         voltages = np.ones(len(self.bars), dtype=complex)
-        for i in range(len(voltages)):
-            if isinstance(self.bars[i], SlackBar):
-                voltages[i] = self.bars[i].voltage
+        for i, bar in enumerate(self.bars):
+            if isinstance(bar, SlackBar):
+                voltages[i] = bar.voltage
+            elif isinstance(bar, RegulatorBar):
+                voltages[i] = bar.voltage_module
         return voltages
 
+    def get_bar_power(self, bar: Bar) -> complex:
+        voltages = self.__voltage_array
+        y_bus = self.__y_bus_array
+        i = self.get_bar_index(bar)
+        summation = sum([y_bus[i, j]*voltages[j]
+                        for j in range(len(voltages)) if i != j])
+        S = (voltages[i].conjugate()*(y_bus[i, i]
+             * voltages[i] + summation)).conjugate()
+        return S
+
+    def get_bar_voltage(self, bar: Bar) -> complex:
+        voltages = self.__voltage_array
+        y_bus = self.__y_bus_array
+        power_esp = self.__power_esp_array
+        i = self.get_bar_index(bar)
+        I = power_esp[i].conjugate()/voltages[i].conjugate()
+        summation = sum([y_bus[i, j]*voltages[j]
+                        for j in range(len(voltages)) if i != j])
+        V = (I - summation)/y_bus[i, i]
+        return V
+
     def solve(self, repeat: int = 1):
-        self.update_bar_voltages(repeat)
+        for _ in range(repeat):
+            self.update_bar_voltages()
         self.update_bar_powers()
         self.update_line_amperages()
         self.update_line_powers()
 
-    def update_bar_voltages(self, repeat: int = 1):
-        for _ in range(repeat):
-            y_bus = self.__y_bus_array
-            power_esp = self.__power_esp_array
-            voltages = self.__voltage_array
+    def update_bar_voltages(self):
+        voltages = self.__voltage_array
+        power_esp = self.__power_esp_array
 
-            for i, bar in enumerate(self.bars):
-                if isinstance(bar, SlackBar):
-                    continue
-                I = power_esp[i].conjugate()/voltages[i].conjugate()
-                summation = sum([y_bus[i, j]*voltages[j]
-                                for j in range(len(voltages)) if i != j])
-                voltages[i] = (I - summation)/y_bus[i, i]
+        for i, bar in enumerate(self.bars):
+            if isinstance(bar, LoadBar):
+                voltages[i] = self.get_bar_voltage(bar)
+            elif isinstance(bar, RegulatorBar):
+                Q = self.get_bar_power(bar).imag
+                P = power_esp[i].real
+                power_esp[i] = P + 1j*Q
+                V = self.get_bar_voltage(bar)
+                V_real = math.sqrt(bar.voltage_module**2 - V.imag**2)
+                voltages[i] = V_real + V.imag*1j
 
-            self.__voltage_array = voltages
-            for i, bar in enumerate(self.bars):
-                bar.voltage = voltages[i]
+        self.__voltage_array = voltages
+        for i, bar in enumerate(self.bars):
+            bar.voltage = voltages[i]
 
     def update_bar_powers(self):
-        voltages = self.__voltage_array
-        y_bus = self.__y_bus_array
-        for i in range(len(voltages)):
-            if isinstance(self.bars[i], SlackBar):
-                summation = sum([y_bus[i, j]*voltages[j]
-                                for j in range(len(voltages)) if i != j])
-                S = (voltages[i].conjugate()*(y_bus[i, i]
-                     * voltages[i] + summation)).conjugate()
-                self.bars[i].power = S
+        for i, bar in enumerate(self.bars):
+            if isinstance(bar, SlackBar):
+                bar.power = self.get_bar_power(bar)
+            elif isinstance(bar, RegulatorBar):
+                bar.power = self.__power_esp_array[i]
 
     def update_line_amperages(self):
         y_bus = self.__y_bus_array
