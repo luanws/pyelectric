@@ -26,7 +26,9 @@ class Circuit:
         self.__power_esp_array = self.get_power_esp_array()
 
     def __str__(self) -> str:
-        return '\n'.join([str(bar) for bar in self.bars])
+        bars = '\n'.join([str(bar) for bar in self.bars])
+        lines = '\n'.join([str(line) for line in self.lines])
+        return f'{bars}\n{lines}'
 
     def get_bar_index(self, bar: Bar) -> int:
         for i, b in enumerate(self.bars):
@@ -69,6 +71,7 @@ class Circuit:
     def solve(self, repeat: int = 1):
         self.update_voltages(repeat)
         self.update_powers()
+        self.update_amperages()
 
     def update_voltages(self, repeat: int = 1):
         for _ in range(repeat):
@@ -80,7 +83,8 @@ class Circuit:
                 if isinstance(bar, SlackBar):
                     continue
                 I = power_esp[i].conjugate()/voltages[i].conjugate()
-                summation = sum([y_bus[i, j]*voltages[j] for j in range(len(voltages)) if i != j])
+                summation = sum([y_bus[i, j]*voltages[j]
+                                for j in range(len(voltages)) if i != j])
                 voltages[i] = (I - summation)/y_bus[i, i]
 
             self.__voltage_array = voltages
@@ -92,6 +96,20 @@ class Circuit:
         y_bus = self.__y_bus_array
         for i in range(len(voltages)):
             if isinstance(self.bars[i], SlackBar):
-                summation = sum([y_bus[i, j]*voltages[j] for j in range(len(voltages)) if i != j])
-                S = (voltages[i].conjugate()*(y_bus[i, i] * voltages[i] + summation)).conjugate()
+                summation = sum([y_bus[i, j]*voltages[j]
+                                for j in range(len(voltages)) if i != j])
+                S = (voltages[i].conjugate()*(y_bus[i, i]
+                     * voltages[i] + summation)).conjugate()
                 self.bars[i].power = S
+
+    def update_amperages(self):
+        y_bus = self.__y_bus_array
+        y = y_bus*(np.identity(len(y_bus))*2 - 1)
+        for i in range(len(self.lines)):
+            line = self.lines[i]
+            bar1 = line.bar1
+            bar2 = line.bar2
+            bar1_index = self.get_bar_index(bar1)
+            bar2_index = self.get_bar_index(bar2)
+            I = (bar1.voltage - bar2.voltage)*y[bar1_index, bar2_index]
+            line.amperage = I
