@@ -104,14 +104,25 @@ class Circuit:
         V = (I - summation)/y_bus[i, i]
         return V
 
-    def solve(self, repeat: int = 1):
-        for _ in range(repeat):
-            self.update_bar_voltages()
-        self.update_bar_powers()
-        self.update_line_amperages()
-        self.update_line_powers()
+    def solve(self, repeat: int = 1, max_error: float = None):
+        if max_error is None:
+            for _ in range(repeat):
+                self.__update_bar_voltages()
+        else:
+            while True:
+                voltages_old = self.__voltage_array.copy()
+                self.__update_bar_voltages()
+                voltages_new = self.__voltage_array
+                error = voltages_new - voltages_old
+                real_error, imag_error = np.abs(error.real), np.abs(error.imag)
+                if (np.all(real_error < max_error) and np.all(imag_error < max_error)):
+                    break
 
-    def update_bar_voltages(self):
+        self.__update_bar_powers()
+        self.__update_line_amperages()
+        self.__update_line_powers()
+
+    def __update_bar_voltages(self):
         voltages = self.__voltage_array
         power_esp = self.__power_esp_array
 
@@ -130,14 +141,14 @@ class Circuit:
         for i, bar in enumerate(self.bars):
             bar.voltage = voltages[i]
 
-    def update_bar_powers(self):
+    def __update_bar_powers(self):
         for i, bar in enumerate(self.bars):
             if isinstance(bar, SlackBar):
                 bar.power = self.get_bar_power(bar)
             elif isinstance(bar, RegulatorBar):
                 bar.power = self.__power_esp_array[i]
 
-    def update_line_amperages(self):
+    def __update_line_amperages(self):
         y_bus = self.__y_bus_array
         y = y_bus*(np.identity(len(y_bus))*2 - 1)
         for line in self.lines:
@@ -148,7 +159,7 @@ class Circuit:
             I = (bar1.voltage - bar2.voltage)*y[bar1_index, bar2_index]
             line.amperage = I
 
-    def update_line_powers(self):
+    def __update_line_powers(self):
         for line in self.lines:
             I = line.amperage
 
