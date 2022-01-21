@@ -1,3 +1,5 @@
+from termcolor import colored
+
 from .bar import Bar
 
 
@@ -23,10 +25,10 @@ class Line:
             self.admittance = 1/impedance
 
     def __str__(self) -> str:
-        Y = complex_to_str(self.admittance)
-        I = complex_to_str(self.amperage)
-        S12 = complex_to_str(self.power)
-        S21 = complex_to_str(self.power_reverse)
-        bar1 = self.bar1.name
-        bar2 = self.bar2.name
+        Y = colored(complex_to_str(self.admittance), 'green')
+        I = colored(complex_to_str(self.amperage), 'green')
+        S12 = colored(complex_to_str(self.power), 'green')
+        S21 = colored(complex_to_str(self.power_reverse), 'green')
+        bar1 = colored(self.bar1.name, 'blue')
+        bar2 = colored(self.bar2.name, 'blue')
         return f'{bar1} ━━ {bar2}: Y = ({Y}), I = ({I}), S{bar1}{bar2} = ({S12}), S{bar2}{bar1} = ({S21})'

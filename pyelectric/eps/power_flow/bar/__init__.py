@@ -1,3 +1,6 @@
+from termcolor import colored
+
+
 def complex_to_str(c: complex) -> str:
     return f'{c.real:.4e} + {c.imag:.4e}j'
 
@@ -11,6 +14,7 @@ class Bar:
         self.name = name
 
     def __str__(self) -> str:
-        v_str = complex_to_str(self.voltage)
-        s_str = complex_to_str(self.power)
-        return f'{self.name}: V = ({v_str}), S = ({s_str})'
+        V = colored(complex_to_str(self.voltage), 'green')
+        S = colored(complex_to_str(self.power), 'green')
+        bar = colored(self.name, 'blue')
+        return f'{bar}: V = ({V}), S = ({S})'
