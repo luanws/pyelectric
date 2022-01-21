@@ -66,6 +66,10 @@ class Circuit:
                 voltages[i] = self.bars[i].voltage
         return voltages
 
+    def solve(self, repeat: int = 1):
+        self.update_voltages(repeat)
+        self.update_powers()
+
     def update_voltages(self, repeat: int = 1):
         for _ in range(repeat):
             y_bus = self.__y_bus_array
@@ -76,10 +80,18 @@ class Circuit:
                 if isinstance(bar, SlackBar):
                     continue
                 I = power_esp[i].conjugate()/voltages[i].conjugate()
-                summation = sum([y_bus[i, j]*voltages[j]
-                                for j in range(len(voltages)) if i != j])
+                summation = sum([y_bus[i, j]*voltages[j] for j in range(len(voltages)) if i != j])
                 voltages[i] = (I - summation)/y_bus[i, i]
 
             self.__voltage_array = voltages
             for i, bar in enumerate(self.bars):
                 bar.voltage = voltages[i]
+
+    def update_powers(self):
+        voltages = self.__voltage_array
+        y_bus = self.__y_bus_array
+        for i in range(len(voltages)):
+            if isinstance(self.bars[i], SlackBar):
+                summation = sum([y_bus[i, j]*voltages[j] for j in range(len(voltages)) if i != j])
+                S = (voltages[i].conjugate()*(y_bus[i, i] * voltages[i] + summation)).conjugate()
+                self.bars[i].power = S
