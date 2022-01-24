@@ -1,6 +1,5 @@
 import math
 from typing import List
-from matplotlib.pyplot import bar
 
 import numpy as np
 import sympy as sp
@@ -59,14 +58,10 @@ class GaussSeidel:
                 power_d[i] = bar.power
             elif isinstance(bar, RegulatorBar):
                 power_g[i] = bar.active_power
-            if isinstance(bar, LoadBar):
+            if not isinstance(bar, SlackBar):
                 self.add_step(f'S^esp_{bar.name}', sp.parse_expr(
                     f'(S_G{bar.name} - S_D{bar.name})/S_base'))
                 self.add_step(f'S^esp_{bar.name}', power_g[i] - power_d[i])
-            elif isinstance(bar, RegulatorBar):
-                self.add_step(f'P^esp_{bar.name}', sp.parse_expr(
-                    f'(S_G{bar.name} - S_D{bar.name})/S_base'))
-                self.add_step(f'P^esp_{bar.name}', power_g[i] - power_d[i])
         power_esp = power_g - power_d
         return power_esp
 
@@ -128,7 +123,7 @@ class GaussSeidel:
         voltage_array = self.__voltage_array
         S_symbol = sp.Symbol(f'S^esp_{bar.name}')
         V_symbol = sp.Symbol(f'V^({self.k})_{bar.name}')
-        I_symbol = S_symbol.conjugate()/V_symbol.conjugate()
+        I_symbol = S_symbol.conjugate()/V_symbol
         summation_symbol = sum([sp.Symbol(
             f'Y_{bar.name}_{j+1}')*sp.Symbol(f'V^(k)_{j+1}') for j in range(len(voltage_array)) if i != j])
         Y_symbol = sp.Symbol(f'Y_{i+1}_{i+1}')
@@ -144,28 +139,12 @@ class GaussSeidel:
                 voltage_array[i] = self.get_bar_voltage(bar)
 
                 voltage_expression = self.get_voltage_expression(bar)
-                self.add_step(f'V^({self.k + 1})_{bar.name}',
-                              voltage_expression)
+                self.add_step(f'V^({self.k + 1})_{bar.name}', voltage_expression)
                 self.add_step(f'V^({self.k + 1})_{bar.name}', voltage_array[i])
             elif isinstance(bar, RegulatorBar):
                 Q = self.get_bar_power(bar).imag
                 P = power_esp[i].real
                 power_esp[i] = P + 1j*Q
-
-                P_esp_symbol = sp.Symbol(f'P^esp_{bar.name}')
-                Q_esp_symbol = sp.Symbol(f'Q^esp({self.k})_{bar.name}')
-                S_esp_symbol = sp.Symbol(f'S^esp({self.k})_{bar.name}')
-
-                summation_expression = sum([sp.Symbol(f'Y_{i+1}_{j+1}')*sp.Symbol(
-                    f'V_{self.circuit.bars[j].name}') for j in range(len(self.__voltage_array))])
-                Q_expression = sp.im(sp.Symbol(f'V_{bar.name}').conjugate(
-                )*(summation_expression), evaluate=False)
-
-                self.add_step(Q_esp_symbol, Q_expression)
-                self.add_step(Q_esp_symbol, Q)
-                self.add_step(S_esp_symbol, P_esp_symbol + sp.I*Q_esp_symbol)
-                self.add_step(S_esp_symbol, power_esp[i])
-
                 V = self.get_bar_voltage(bar)
                 V_real = math.sqrt(bar.voltage_module**2 - V.imag**2)
                 voltage_array[i] = V_real + V.imag*1j
@@ -175,8 +154,7 @@ class GaussSeidel:
                 voltage_symbol = sp.Symbol(f'V^({self.k + 1})_{bar.name}')
                 voltage_module_symbol = sp.Symbol(f'|{"{"}V_{bar.name}{"}"}|')
                 self.add_step(sp.im(voltage_symbol), imag_voltage)
-                real_voltage = sp.sqrt(
-                    voltage_module_symbol**2 - sp.im(voltage_symbol)**2, evaluate=False)
+                real_voltage = sp.sqrt(voltage_module_symbol**2 - sp.im(voltage_symbol)**2, evaluate=False)
                 self.add_step(sp.re(voltage_symbol), real_voltage)
                 self.add_step(voltage_symbol, voltage_array[i])
 
@@ -189,21 +167,8 @@ class GaussSeidel:
         for i, bar in enumerate(self.circuit.bars):
             if isinstance(bar, SlackBar):
                 power_array[i] = self.get_bar_power(bar)
-
-                summation_symbol = sum([sp.Symbol(f'Y_{i+1}_{j+1}')*sp.Symbol(
-                    f'V_{self.circuit.bars[j].name}') for j in range(len(self.__voltage_array))])
-                S_expression = sp.Symbol(
-                    f'V_{bar.name}').conjugate()*(summation_symbol)
-
-                self.add_step(f'S_{bar.name}', S_expression)
-                self.add_step(f'S_{bar.name}', power_array[i])
             elif isinstance(bar, RegulatorBar):
                 power_array[i] = self.__power_esp_array[i]
-                self.add_step(f'S_{bar.name}', sp.Symbol(
-                    f'S^esp({self.k - 1})_{bar.name}'))
-                self.add_step(f'S_{bar.name}', power_array[i])
-            elif isinstance(bar, LoadBar):
-                power_array[i] = bar.power
         self.circuit.update_bar_powers(power_array)
 
     def __update_line_amperages(self):
@@ -218,10 +183,6 @@ class GaussSeidel:
             I = (bar1.voltage - bar2.voltage)*y[bar1_index, bar2_index]
             amperage_array[bar1_index, bar2_index] = I
             amperage_array[bar2_index, bar1_index] = -I
-
-            self.add_step(f'I_{bar1.name}_{bar2.name}', sp.parse_expr(
-                f'(V_{bar1.name} - V_{bar2.name})*Y_{bar1.name}_{bar2.name}'))
-            self.add_step(f'I_{bar1.name}_{bar2.name}', I)
         self.circuit.update_line_amperages(amperage_array)
 
     def __update_line_powers(self):
@@ -240,22 +201,4 @@ class GaussSeidel:
             V2 = line.bar2.voltage
             S21 = V2*(-I).conjugate()
             power_array[bar2_index, bar1_index] = S21
-
-            I_symbol = sp.Symbol(f'I_{line.bar1.name}_{line.bar2.name}')
-
-            V1_symbol = sp.Symbol(f'V_{line.bar1.name}')
-            S12_symbol = sp.Symbol(f'S_{line.bar1.name}_{line.bar2.name}')
-            S12_expression = V1_symbol*I_symbol.conjugate()
-            self.add_step(S12_symbol, S12_expression)
-            self.add_step(S12_symbol, S12)
-
-            V2_symbol = sp.Symbol(f'V_{line.bar2.name}')
-            S21_symbol = sp.Symbol(f'S_{line.bar2.name}_{line.bar1.name}')
-            S21_expression = V2_symbol*(-I_symbol).conjugate()
-            self.add_step(S21_symbol, S21_expression)
-            self.add_step(S21_symbol, S21)
-
-            self.add_step(S12_symbol + S21_symbol, S12 + S21)
-            
-
         self.circuit.update_line_powers(power_array)
