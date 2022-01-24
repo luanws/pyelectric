@@ -204,6 +204,7 @@ class GaussSeidelStepByStep:
 
     def __update_bar_powers(self):
         power_array = np.zeros((len(self.circuit.bars)), dtype=complex)
+        power_esp = self.__power_esp_array
         for i, bar in enumerate(self.circuit.bars):
             if isinstance(bar, SlackBar):
                 power_array[i] = self.get_bar_power(bar)
@@ -216,9 +217,25 @@ class GaussSeidelStepByStep:
                 self.add_step(f'S_{bar.name}', S_expression)
                 self.add_step(f'S_{bar.name}', power_array[i])
             elif isinstance(bar, RegulatorBar):
-                power_array[i] = self.__power_esp_array[i]
-                self.add_step(f'S_{bar.name}', sp.Symbol(
-                    f'S^esp({self.k - 1})_{bar.name}'))
+                Q = self.get_bar_power(bar).imag
+                P = power_esp[i].real
+                power_esp[i] = P + 1j*Q
+
+                P_esp_symbol = sp.Symbol(f'P^esp_{bar.name}')
+                Q_esp_symbol = sp.Symbol(f'Q^esp({self.k})_{bar.name}')
+                S_esp_symbol = sp.Symbol(f'S_{bar.name}')
+
+                summation_expression = sum([sp.Symbol(f'Y_{i+1}_{j+1}')*sp.Symbol(
+                    f'V_{self.circuit.bars[j].name}') for j in range(len(self.__voltage_array))])
+                Q_expression = sp.im(sp.Symbol(f'V_{bar.name}').conjugate(
+                )*(summation_expression), evaluate=False)
+
+                self.add_step(Q_esp_symbol, Q_expression)
+                self.add_step(Q_esp_symbol, Q)
+                self.add_step(S_esp_symbol, P_esp_symbol + sp.I*Q_esp_symbol)
+                self.add_step(S_esp_symbol, power_esp[i])
+
+                power_array[i] = power_esp[i]
                 self.add_step(f'S_{bar.name}', power_array[i])
             elif isinstance(bar, LoadBar):
                 power_array[i] = bar.power
