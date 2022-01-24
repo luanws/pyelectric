@@ -136,8 +136,19 @@ class GaussSeidelStepByStep:
         S_symbol = sp.Symbol(f'S^esp_{bar.name}')
         V_symbol = sp.Symbol(f'V^({self.k})_{bar.name}')
         I_symbol = S_symbol.conjugate()/V_symbol.conjugate()
-        summation_symbol = sum([sp.Symbol(f'Y_{i+1}_{j+1}')*sp.Symbol(
-            f'V^({get_k(self.circuit.bars[j])})_{self.circuit.bars[j].name}') for j in range(len(voltage_array)) if i != j])
+
+        summation_symbol = 0
+        for j in range(len(voltage_array)):
+            if i != j:
+                other_bar = self.circuit.bars[j]
+                k = get_k(other_bar)
+                Y_symbol = sp.Symbol(f'Y_{i+1}_{j+1}')
+                if isinstance(other_bar, SlackBar):
+                    V_symbol = sp.Symbol(f'V_{other_bar.name}')
+                else:
+                    V_symbol = sp.Symbol(f'V^({k})_{other_bar.name}')
+                summation_symbol += Y_symbol*V_symbol
+
         Y_symbol = sp.Symbol(f'Y_{i+1}_{i+1}')
         V_expression = (I_symbol - (summation_symbol))/Y_symbol
         return V_expression
