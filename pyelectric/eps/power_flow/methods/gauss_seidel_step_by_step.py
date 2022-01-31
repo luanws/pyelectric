@@ -33,24 +33,6 @@ class GaussSeidelStepByStep:
     def add_step(self, *args, **kwargs):
         self.__steps.append(Step(*args, **kwargs))
 
-    def get_y_bus_array(self) -> np.ndarray:
-        y_bus = np.zeros((len(self.circuit.bars), len(
-            self.circuit.bars)), dtype=complex)
-        for line in self.circuit.lines:
-            bar1_index = self.circuit.get_bar_index(line.bar1)
-            bar2_index = self.circuit.get_bar_index(line.bar2)
-            y_bus[bar1_index, bar2_index] = -line.admittance
-            y_bus[bar2_index, bar1_index] = -line.admittance
-
-            y_bus[bar1_index, bar1_index] = sum(
-                [l.admittance for l in self.circuit.lines if l.bar1 == line.bar1 or l.bar2 == line.bar1])
-
-            y_bus[bar2_index, bar2_index] = sum(
-                [l.admittance for l in self.circuit.lines if l.bar1 == line.bar2 or l.bar2 == line.bar2])
-
-        self.add_step('Y_bus', sp.Matrix(y_bus))
-        return y_bus
-
     def get_power_esp_array(self) -> np.ndarray:
         power_g = np.zeros((len(self.circuit.bars)), dtype=complex)
         power_d = np.zeros((len(self.circuit.bars)), dtype=complex)
@@ -103,7 +85,7 @@ class GaussSeidelStepByStep:
 
     def solve(self, repeat: int = 1, max_error: float = None):
         self.__steps = []
-        self.__y_bus_array = self.get_y_bus_array()
+        self.__y_bus_array = self.circuit.get_y_bus_array()
         self.__voltage_array = self.get_initial_voltage_array()
         self.__power_esp_array = self.get_power_esp_array()
         if max_error is None:

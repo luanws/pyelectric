@@ -1,8 +1,6 @@
 import math
-from typing import List
 
 import numpy as np
-import sympy as sp
 from pyelectric.eps.power_flow.bar import Bar
 from pyelectric.eps.power_flow.bar.load_bar import LoadBar
 from pyelectric.eps.power_flow.bar.regulator_bar import RegulatorBar
@@ -15,35 +13,14 @@ class GaussSeidel:
     __y_bus_array: np.ndarray
     __voltage_array: np.ndarray
     __power_esp_array: np.ndarray
-    __steps: List[sp.Eq] = []
 
     def __init__(self, circuit: Circuit):
         self.circuit = circuit
-        self.__y_bus_array = self.get_y_bus_array()
-        self.__voltage_array = self.get_voltage_array()
-        self.__power_esp_array = self.get_power_esp_array()
 
     def __str__(self) -> str:
         bars = '\n'.join([str(bar) for bar in self.circuit.bars])
         lines = '\n'.join([str(line) for line in self.circuit.lines])
         return f'{bars}\n{lines}'
-
-    def get_y_bus_array(self) -> np.ndarray:
-        y_bus = np.zeros((len(self.circuit.bars), len(
-            self.circuit.bars)), dtype=complex)
-        for line in self.circuit.lines:
-            bar1_index = self.circuit.get_bar_index(line.bar1)
-            bar2_index = self.circuit.get_bar_index(line.bar2)
-            y_bus[bar1_index, bar2_index] = -line.admittance
-            y_bus[bar2_index, bar1_index] = -line.admittance
-
-            y_bus[bar1_index, bar1_index] = sum(
-                [l.admittance for l in self.circuit.lines if l.bar1 == line.bar1 or l.bar2 == line.bar1])
-
-            y_bus[bar2_index, bar2_index] = sum(
-                [l.admittance for l in self.circuit.lines if l.bar1 == line.bar2 or l.bar2 == line.bar2])
-
-        return y_bus
 
     def get_power_esp_array(self) -> np.ndarray:
         power_g = np.zeros((len(self.circuit.bars)), dtype=complex)
@@ -56,7 +33,7 @@ class GaussSeidel:
         power_esp = power_g - power_d
         return power_esp
 
-    def get_voltage_array(self) -> np.ndarray:
+    def get_initial_voltage_array(self) -> np.ndarray:
         voltages = np.ones(len(self.circuit.bars), dtype=complex)
         for i, bar in enumerate(self.circuit.bars):
             if isinstance(bar, SlackBar):
@@ -87,6 +64,9 @@ class GaussSeidel:
         return V
 
     def solve(self, repeat: int = 1, max_error: float = None):
+        self.__y_bus_array = self.circuit.get_y_bus_array()
+        self.__voltage_array = self.get_initial_voltage_array()
+        self.__power_esp_array = self.get_power_esp_array()
         if max_error is None:
             for _ in range(repeat):
                 self.__update_bar_voltages()

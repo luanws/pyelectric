@@ -36,6 +36,22 @@ class Circuit:
     def power_base(self) -> float:
         return self.__power_base
 
+    def get_y_bus_array(self) -> np.ndarray:
+        y_bus = np.zeros((len(self.bars), len(self.bars)), dtype=complex)
+        for line in self.lines:
+            bar1_index = self.get_bar_index(line.bar1)
+            bar2_index = self.get_bar_index(line.bar2)
+            y_bus[bar1_index, bar2_index] = -line.admittance
+            y_bus[bar2_index, bar1_index] = -line.admittance
+
+            y_bus[bar1_index, bar1_index] = sum(
+                [l.admittance for l in self.lines if l.bar1 == line.bar1 or l.bar2 == line.bar1])
+
+            y_bus[bar2_index, bar2_index] = sum(
+                [l.admittance for l in self.lines if l.bar1 == line.bar2 or l.bar2 == line.bar2])
+
+        return y_bus
+
     def bar_powers_to_pu(self):
         for bar in self.__bars:
             bar.power /= self.__power_base
