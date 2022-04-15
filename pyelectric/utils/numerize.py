@@ -1,6 +1,8 @@
 import math
 from typing import List
 
+decimal_separator = '.'
+
 
 def format(
     number: float,
@@ -19,7 +21,7 @@ def format(
         number_str = f'{number_str}{suffixes[magnitude]}{unit}'
     else:
         number_str = f'{number:.{decimal}e}{unit}'
-    return number_str.replace('.', ',')
+    return number_str.replace('.', decimal_separator)
 
 
 def revert(
@@ -29,7 +31,7 @@ def revert(
     negative_suffixes: List[str] = ['m', 'u', 'n', 'p'],
 ) -> float:
     suffixes = positive_suffixes + negative_suffixes[::-1]
-    number_str = number_str.replace(',', '.')
+    number_str = number_str.replace(decimal_separator, '.')
     number_str = number_str.replace(' ', '')
     if len(unit) > 0 and number_str.endswith(unit):
         number_str = number_str[:-len(unit)]

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyelectric",
-    version="0.4.3",
+    version="0.4.4",
     author="luanws",
     author_email="luan.w.silveira@gmail.com",
     description="Python package for electric circuits",
